@@ -3,9 +3,6 @@ package com.springboot.studentInfoProject.Service;
 import com.springboot.studentInfoProject.Entity.Student;
 import com.springboot.studentInfoProject.Repository.StudentRepository;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,12 +12,16 @@ import java.util.Optional;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 @Transactional
 public class StudentService {
 
     @Autowired
     private final StudentRepository studentRepository;
+
+    public StudentService(StudentRepository studentRepository)
+    {
+        this.studentRepository = studentRepository;
+    }
 
     public void loadStudentDetailsFromDB() {
         // Implementing the logic to load student details from the database

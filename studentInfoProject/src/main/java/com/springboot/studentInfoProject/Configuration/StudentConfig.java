@@ -1,11 +1,14 @@
 package com.springboot.studentInfoProject.Configuration;
 
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,30 +17,22 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 public class StudentConfig {
-
-
 
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        InMemoryUserDetailsManager userDetailsManager = new InMemoryUserDetailsManager();
-
-        // Admin User
-        userDetailsManager.createUser(User.builder()
-                .username("admin")
-                .password(encoder.encode("admin123"))
-                .roles("ADMIN")
-                .build());
-
-        // Student User
-        userDetailsManager.createUser(User.builder()
-                .username("student")
+        UserDetails user = User.withUsername("Student")
                 .password(encoder.encode("student123"))
-                .roles("STUDENT")
-                .build());
+                .roles("USER")
+                .build();
+        UserDetails admin = User.withUsername("Admin")
+                .password(encoder.encode("admin123"))
+                .roles("USER","ADMIN","HR")
+                .build();
+        return new InMemoryUserDetailsManager(admin, user);
 
-        return userDetailsManager;
+        //return new StudentInfoUserDetailsService();
     }
 
     @Bean
@@ -45,18 +40,20 @@ public class StudentConfig {
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeRequests()
-                .antMatchers("/studentInfo/welcome").permitAll() // Allow access to /welcome without authentication
-                .anyRequest().authenticated()
-                .and()
-                .httpBasic()
-                .and()
-                .csrf().disable();
+                .authorizeRequests(authorize -> authorize
+                        .requestMatchers("/studentInfo/all").hasRole("USER")
+                        .requestMatchers("/studentInfo/welcome").permitAll()
+                        .requestMatchers("/studentInfo/{id}").hasAnyRole("USER", "ADMIN", "HR")
+                        .anyRequest().authenticated()
+                )
+                .formLogin(Customizer.withDefaults());
+
 
         return http.build();
+
     }
+
 }
